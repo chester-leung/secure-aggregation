@@ -54,6 +54,7 @@ cdef unsigned char* to_cstring_array(list_str):
     return ret
 
 def encrypt(model):
+    print("kvah encryption start)")
     cdef int buffer_len = 0
 
     # FIXME: dict_to_cmap to translate dictionary to c++ readable map
@@ -62,6 +63,7 @@ def encrypt(model):
         raise IndexError
     cdef bytes serialized_buffer = serialized_model[:buffer_len]
     ciphertext, iv, tag = cpp_encrypt_bytes(serialized_buffer, buffer_len)
+    print("kvah encryption end)")
     return ciphertext, iv, tag
 
 def cpp_encrypt_bytes(model_data, data_len):
@@ -96,14 +98,17 @@ def cpp_encrypt_bytes(model_data, data_len):
     cdef bytes iv = ciphertext[1][:12]
     cdef bytes tag = ciphertext[2][:16]
     
+    lock.acquire()
     PyMem_Free(ciphertext[0])
     PyMem_Free(ciphertext[1])
     PyMem_Free(ciphertext[2])
     PyMem_Free(ciphertext)
+    lock.release()
     print("Finished cpp encryption")
     return output, iv, tag
 
 def decrypt(model_data, iv, tag, data_len):
+    print("kvah decryption start")
     lock.acquire()
     cdef unsigned char* plaintext = <unsigned char*> PyMem_Malloc(data_len * sizeof(unsigned char))
     lock.release()
@@ -114,6 +119,9 @@ def decrypt(model_data, iv, tag, data_len):
 
     # Cython automatically converts C++ map to Python dict
     model = deserialize(plaintext)
+    lock.acquire()
     PyMem_Free(plaintext)
+    lock.release()
+    print("kvah decryption end")
     return model
     

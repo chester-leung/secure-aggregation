@@ -8,7 +8,7 @@ enclave {
             size_t old_params_length,
             [in, count=accumulator_length] float* contributions);
 
-        public bool enclave_set_num_threads(int num_threads);
+        /* public bool enclave_set_num_threads(int num_threads); */
 
         public void enclave_modelaggregator(int tid);
 

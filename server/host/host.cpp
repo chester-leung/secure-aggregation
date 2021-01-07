@@ -1,5 +1,5 @@
 #include <openenclave/host.h>
-#include <omp.h>
+// #include <omp.h>
 
 #include "enclave.h"
 
@@ -11,12 +11,13 @@
 using namespace std;
 
 static char* g_path = "/workspace/kvah/server/build/enclave/enclave.signed"; 
+// static char* g_path = "./enclave/enclave.signed"; 
 // static char* g_path = "/workspace/secure-aggregation/server/build/enclave/enclave.signed"; 
 
 static uint32_t g_flags = 0;
 
 // Cannot be larger than NumTCS in modelaggregator.conf
-static const int NUM_THREADS = 1;
+// static const int NUM_THREADS = 1;
 
 // This is the function that the Python code will call into.
 // Returns 0 on success.
@@ -66,29 +67,39 @@ int host_modelaggregator(uint8_t*** encrypted_accumulator,
         return 1;
     }
 
-    bool success;
-    error = enclave_set_num_threads(enclave.getEnclave(), &success, NUM_THREADS);
-    if (error != OE_OK || !success) {
+    // bool success;
+    // error = enclave_set_num_threads(enclave.getEnclave(), &success, NUM_THREADS);
+    // if (error != OE_OK || !success) {
+    //     fprintf(
+    //         stderr,
+    //         "calling into enclave_set_num_threads failed: result=%u (%s)\n",
+    //         error,
+    //         oe_result_str(error));
+    //     return 1;
+    // }
+
+    // #pragma omp parallel for
+    // for (int _ = 0; _ < NUM_THREADS; _ ++) {
+    //     int tid = omp_get_thread_num();
+    //     error = enclave_modelaggregator(enclave.getEnclave(), tid);
+    //     if (error != OE_OK) {
+    //         fprintf(
+    //             stderr,
+    //             "calling into enclave_modelaggregator failed: result=%u (%s)\n",
+    //             error,
+    //             oe_result_str(error));
+    //         exit(1);
+    //     }
+    // }
+    
+    error = enclave_modelaggregator(enclave.getEnclave(), 0);
+    if (error != OE_OK) {
         fprintf(
             stderr,
-            "calling into enclave_set_num_threads failed: result=%u (%s)\n",
+            "calling into enclave_modelaggregator failed: result=%u (%s)\n",
             error,
             oe_result_str(error));
-        return 1;
-    }
-
-    #pragma omp parallel for
-    for (int _ = 0; _ < NUM_THREADS; _ ++) {
-        int tid = omp_get_thread_num();
-        error = enclave_modelaggregator(enclave.getEnclave(), tid);
-        if (error != OE_OK) {
-            fprintf(
-                stderr,
-                "calling into enclave_modelaggregator failed: result=%u (%s)\n",
-                error,
-                oe_result_str(error));
-            exit(1);
-        }
+        exit(1);
     }
 
     error = enclave_transfer_model_out(enclave.getEnclave(),

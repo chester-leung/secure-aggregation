@@ -28,7 +28,7 @@ if (!oe_is_outside_enclave((ptr), size)) {                \
 }
 
 // Defined in modelaggregator.conf
-static const int MAX_TCS = 32;
+// static const int MAX_TCS = 32;
 
 // Ciphertext, IV, and tag are required for decryption
 static const size_t ENCRYPTION_METADATA_LENGTH = 3;
@@ -38,7 +38,7 @@ static vector<map<string, vector<float>>> g_accumulator;
 static vector<string> g_vars_to_aggregate;
 static map<string, vector<float>> g_old_params;
 static vector<float> g_contributions;
-static int NUM_THREADS;
+// static int NUM_THREADS;
 
 // Helper function used to copy double pointers from untrusted memory to enclave memory
 void copy_arr_to_enclave(uint8_t* dst[], size_t num, uint8_t* src[], size_t lengths[]) {
@@ -118,26 +118,29 @@ void enclave_store_globals(uint8_t*** encrypted_accumulator,
     g_old_params = deserialize(serialized_old_params);
 }
 
-// Validates the number of threads that the host is trying to create
-bool enclave_set_num_threads(int num_threads) {
-    std::cout << "Ecall: set num threads" << std::endl;
-    // We can't run more threads than we have TCSs, and there can't be more threads than weights
-    if (num_threads > MAX_TCS || num_threads > g_vars_to_aggregate.size()) {
-        return false;
-    }
-    NUM_THREADS = num_threads;
-    return true;
-}
+// // Validates the number of threads that the host is trying to create
+// bool enclave_set_num_threads(int num_threads) {
+//     std::cout << "Ecall: set num threads" << std::endl;
+//     // We can't run more threads than we have TCSs, and there can't be more threads than weights
+//     if (num_threads > MAX_TCS || num_threads > g_vars_to_aggregate.size()) {
+//         return false;
+//     }
+//     NUM_THREADS = num_threads;
+//     return true;
+// }
 
 // This is the function that the host calls. It performs the aggregation and updates g_old_params.
 void enclave_modelaggregator(int tid) {
     std::cout << "Ecall: model aggregator" << std::endl;
     // Fast ceiling division of g_vars_to_aggregate.size() / NUM_THREADS
-    int slice_length = 1 + ((g_vars_to_aggregate.size() - 1) / NUM_THREADS);
+    // int slice_length = 1 + ((g_vars_to_aggregate.size() - 1) / NUM_THREADS);
 
     // Pick on which variables to perform aggregation depending on thread ID
-    auto first = g_vars_to_aggregate.begin() + tid * slice_length;
-    auto last = g_vars_to_aggregate.begin() + min((int) g_vars_to_aggregate.size(), (tid + 1) * slice_length);
+    // auto first = g_vars_to_aggregate.begin() + tid * slice_length;
+    // auto last = g_vars_to_aggregate.begin() + min((int) g_vars_to_aggregate.size(), (tid + 1) * slice_length);
+    
+    auto first = g_vars_to_aggregate.begin();
+    auto last = g_vars_to_aggregate.end();
     vector<string> vars_slice(first, last);
 
     // Outer loop: iterate through each local model update

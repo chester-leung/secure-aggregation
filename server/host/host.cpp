@@ -146,6 +146,8 @@ int host_modelaggregator(uint8_t* encrypted_accumulator,
 
     uint8_t** new_encrypted_new_params_ptr;
     // uint8_t** new_encrypted_new_params_ptr = (uint8_t**) malloc(3 * sizeof(uint8_t*)); 
+    
+    // Assumes old_params_length and new_params_length are the same
     // new_encrypted_new_params_ptr[0] = (uint8_t*) malloc(old_params_length * sizeof(uint8_t));
     // new_encrypted_new_params_ptr[1] = (uint8_t*) malloc(CIPHER_IV_SIZE * sizeof(uint8_t));
     // new_encrypted_new_params_ptr[2] = (uint8_t*) malloc(CIPHER_TAG_SIZE * sizeof(uint8_t));
@@ -156,6 +158,7 @@ int host_modelaggregator(uint8_t* encrypted_accumulator,
 
     // Flatten output to be compatible with cython
     std::cout << "Flattening output" << std::endl;
+    std::cout << "New parms length: " << *new_params_length << std::endl;
     index = 0;
 
     memcpy(*encrypted_new_params_ptr + index, new_encrypted_new_params_ptr[0], *new_params_length);

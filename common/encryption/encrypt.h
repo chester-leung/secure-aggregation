@@ -35,8 +35,6 @@ static int print_bytes_(uint8_t* data, size_t len) {
   std::cout << std::endl;
 }
 
-void decrypt_bytes(uint8_t* model_data, uint8_t* iv, uint8_t* tag, size_t data_len, uint8_t** text);
-
 void encrypt_bytes(uint8_t* model_data, size_t data_len, uint8_t** ciphertext) {
 
     mbedtls_gcm_context gcm;
@@ -67,23 +65,23 @@ void encrypt_bytes(uint8_t* model_data, size_t data_len, uint8_t** ciphertext) {
     memcpy(*ciphertext + data_len, iv, CIPHER_IV_SIZE);
     memcpy(*ciphertext + data_len + CIPHER_IV_SIZE, tag, CIPHER_TAG_SIZE);
 
-    std::cout << "Encrypted output in c++: ";
-    for (int i = 0; i < 100; i++) {
-        std::cout << (int) output[i] << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "IV: ";
-    for (int i = 0; i < CIPHER_IV_SIZE; i++) {
-        std::cout << (int) iv[i] << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "tag: ";
-    for (int i = 0; i < CIPHER_TAG_SIZE; i++) {
-        std::cout << (int) tag[i] << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "Encrypted output in c++: ";
+    // for (int i = 0; i < 100; i++) {
+    //     std::cout << (int) output[i] << " ";
+    // }
+    // std::cout << std::endl;
+    // 
+    // std::cout << "IV: ";
+    // for (int i = 0; i < CIPHER_IV_SIZE; i++) {
+    //     std::cout << (int) iv[i] << " ";
+    // }
+    // std::cout << std::endl;
+    // 
+    // std::cout << "tag: ";
+    // for (int i = 0; i < CIPHER_TAG_SIZE; i++) {
+    //     std::cout << (int) tag[i] << " ";
+    // }
+    // std::cout << std::endl;
 
     free(output);
     free(iv);

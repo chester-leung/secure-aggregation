@@ -144,10 +144,11 @@ int host_modelaggregator(uint8_t* encrypted_accumulator,
         exit(1);
     }
 
-    uint8_t** new_encrypted_new_params_ptr = (uint8_t**) malloc(3 * sizeof(uint8_t*)); 
-    new_encrypted_new_params_ptr[0] = (uint8_t*) malloc(old_params_length * sizeof(uint8_t));
-    new_encrypted_new_params_ptr[1] = (uint8_t*) malloc(CIPHER_IV_SIZE * sizeof(uint8_t));
-    new_encrypted_new_params_ptr[2] = (uint8_t*) malloc(CIPHER_TAG_SIZE * sizeof(uint8_t));
+    uint8_t** new_encrypted_new_params_ptr;
+    // uint8_t** new_encrypted_new_params_ptr = (uint8_t**) malloc(3 * sizeof(uint8_t*)); 
+    // new_encrypted_new_params_ptr[0] = (uint8_t*) malloc(old_params_length * sizeof(uint8_t));
+    // new_encrypted_new_params_ptr[1] = (uint8_t*) malloc(CIPHER_IV_SIZE * sizeof(uint8_t));
+    // new_encrypted_new_params_ptr[2] = (uint8_t*) malloc(CIPHER_TAG_SIZE * sizeof(uint8_t));
 
     error = enclave_transfer_model_out(enclave.getEnclave(),
             &new_encrypted_new_params_ptr,

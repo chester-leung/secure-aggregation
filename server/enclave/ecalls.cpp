@@ -189,14 +189,16 @@ void enclave_transfer_model_out(uint8_t*** encrypted_new_params_ptr, size_t* new
     encrypt_bytes(serialized_new_params, serialized_buffer_size, encrypted_new_params);
 
     // Need to copy the encrypted model, IV, and tag over to untrusted memory.
-    *encrypted_new_params_ptr = (uint8_t**) oe_host_malloc(ENCRYPTION_METADATA_LENGTH * sizeof(uint8_t*));
+    std::cout << "Copying to model to untrusted memory" << std::endl;
+    // *encrypted_new_params_ptr = (uint8_t**) oe_host_malloc(ENCRYPTION_METADATA_LENGTH * sizeof(uint8_t*));
     *new_params_length = serialized_buffer_size;
     size_t item_lengths[3] = {*new_params_length, CIPHER_IV_SIZE, CIPHER_TAG_SIZE};
     for (int i = 0; i < ENCRYPTION_METADATA_LENGTH; i++) {
-        (*encrypted_new_params_ptr)[i] = (uint8_t*) oe_host_malloc(item_lengths[i] * sizeof(uint8_t));
+        // (*encrypted_new_params_ptr)[i] = (uint8_t*) oe_host_malloc(item_lengths[i] * sizeof(uint8_t));
         memcpy((void*) (*encrypted_new_params_ptr)[i], (const void*) encrypted_new_params[i], item_lengths[i] * sizeof(uint8_t));
     }
 
+    std::cout << "FInished copying model to untrusted memory " << std::endl;
     delete_double_ptr(encrypted_new_params, ENCRYPTION_METADATA_LENGTH);
 
     // Clear the global variables before the next round of training

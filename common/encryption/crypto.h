@@ -178,8 +178,14 @@ static int decrypt_symm(unsigned char* key, const unsigned char* data, size_t da
       data,                                     // buffer holding the input ciphertext data
       output);                                  // buffer for holding the output decrypted data
   if (ret != 0) {
+      char* err = (char*) malloc(150);
+      mbedtls_strerror(ret, err, 150);
     printf( "mbedtls_gcm_auth_decrypt failed with error -0x%04x\n", -ret);
+    std::cout << "Error: " << err << std::endl;
   }
+
+  char* err = (char*) malloc(150);
+  mbedtls_strerror(ret, err, 150);
   return ret;
 }
 

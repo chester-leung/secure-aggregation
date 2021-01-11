@@ -9,7 +9,9 @@ from libcpp.pair cimport pair as cpair
 from libcpp.vector cimport vector
 #  from libc.stdlib cimport malloc, free
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
-import threading
+cimport numpy as np
+import numpy as np
+#  import threading
 
 # TODO: Hold global interpreter lock upon PyMem_Malloc, PyMem_Free calls
 # https://docs.python.org/3/c-api/memory.html
@@ -17,6 +19,7 @@ import threading
 
 IV_LENGTH = 12
 TAG_LENGTH = 16
+np.import_array()
 
 cdef extern from "../common/encryption/serialization.h":
     unsigned char* serialize(mapcpp[string, vector[float]] model, int* serialized_buffer_size)
@@ -25,6 +28,9 @@ cdef extern from "../common/encryption/serialization.h":
 cdef extern from "../common/encryption/encrypt.h":
     void encrypt_bytes(unsigned char* model_data, size_t data_len, unsigned char** ciphertext)
     void decrypt_bytes(unsigned char* model_data, unsigned char* iv, unsigned char* tag, size_t data_len, unsigned char** text)
+
+cdef extern from "numpy/arrayobject.h":
+    void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
 
 cdef cmap[string, vector[float]] dict_to_cmap(dict the_dict):
     """
@@ -60,7 +66,18 @@ def encrypt(model):
     serialized_model = serialize(dict_to_cmap(model), &buffer_len)
     if buffer_len <= 0:
         raise IndexError
-    cdef bytes serialized_buffer = serialized_model[:buffer_len]
+    #  cdef bytes serialized_buffer = serialized_model[:buffer_len]
+
+    # Take ownership of C++ malloc'ed memory in Python
+    cdef np.npy_intp shape[1] 
+    shape[0] = <np.npy_intp> buffer_len
+    cdef np.ndarray[np.uint8_t, ndim=1] py_serialized_model = np.PyArray_SimpleNewFromData(1, shape, np.NPY_UINT8, serialized_model)
+
+    # Ensure that memory is freed
+    PyArray_ENABLEFLAGS(py_serialized_model, np.NPY_OWNDATA)
+
+    # Convert ndarray to Python bytes
+    serialized_buffer = py_serialized_model.tobytes()
     ciphertext, iv, tag = cpp_encrypt_bytes(serialized_buffer, buffer_len)
     print("kvah encryption end)")
     return ciphertext, iv, tag
@@ -77,17 +94,17 @@ def cpp_encrypt_bytes(model_data, data_len):
     cdef bytes iv = ciphertext[data_len:data_len + IV_LENGTH]
     cdef bytes tag = ciphertext[data_len + IV_LENGTH:data_len + IV_LENGTH + TAG_LENGTH]
 
-    print("OPython output: ")
-    for i in range(100):
-        print(int(output[i]), end =" ")
-
-    print("\nPython IV")
-    for i in range(len(iv)):
-        print(int(iv[i]), end =" ")
-
-    print("\nPython tag")
-    for i in range(len(tag)):
-        print(int(tag[i]), end =" ")
+    #  print("OPython output: ")
+    #  for i in range(100):
+    #      print(int(output[i]), end =" ")
+    #  
+    #  print("\nPython IV")
+    #  for i in range(len(iv)):
+    #      print(int(iv[i]), end =" ")
+    #  
+    #  print("\nPython tag")
+    #  for i in range(len(tag)):
+    #      print(int(tag[i]), end =" ")
     
     #  PyMem_Free(ciphertext[0])
     #  PyMem_Free(ciphertext[1])

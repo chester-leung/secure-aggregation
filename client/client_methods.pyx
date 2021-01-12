@@ -49,6 +49,7 @@ cdef unsigned char* to_cstring_array(list_str):
 
 def encrypt(model):
     cdef int buffer_len = 0
+    cdef unsigned char* serialized_model
 
     serialized_model = serialize(dict_to_cmap(model), &buffer_len)
     if buffer_len <= 0:
@@ -95,6 +96,7 @@ def decrypt(model_data, iv, tag, data_len):
     decrypt_bytes(c_model_data, c_iv, c_tag, data_len, &plaintext)
 
     # Cython automatically converts C++ map to Python dict
+    cdef mapcpp[string, vector[float]] model 
     model = deserialize(plaintext)
     PyMem_Free(plaintext)
     return model

@@ -35,22 +35,18 @@ static int print_bytes_(uint8_t* data, size_t len) {
   std::cout << std::endl;
 }
 
-void encrypt_bytes(uint8_t* model_data, size_t data_len, uint8_t** ciphertext) {
+uint8_t* encrypt_bytes(uint8_t* model_data, size_t data_len, uint8_t** ciphertext) {
 
     mbedtls_gcm_context gcm;
     mbedtls_gcm_init(&gcm);
 
     unsigned char key[] = "abcdefghijklmnop";
 
-    // unsigned char* output = ciphertext[0];
-    // unsigned char* iv = ciphertext[1];
-    // unsigned char* tag = ciphertext[2];
-
     uint8_t* output = (uint8_t*) malloc(data_len * sizeof(uint8_t));
     uint8_t* iv = (uint8_t*) malloc(CIPHER_IV_SIZE * sizeof(uint8_t));
     uint8_t* tag = (uint8_t*) malloc(CIPHER_TAG_SIZE * sizeof(uint8_t));
 
-    int ret = encrypt_symm(
+    int err = encrypt_symm(
         key,
         model_data,
         data_len,
@@ -61,34 +57,25 @@ void encrypt_bytes(uint8_t* model_data, size_t data_len, uint8_t** ciphertext) {
         tag
     );
 
+    // FIXME: Memory leak
+    uint8_t* ret = (uint8_t*) malloc((data_len + CIPHER_IV_SIZE + CIPHER_TAG_SIZE) * sizeof(uint8_t));
+
     memcpy(*ciphertext, output, data_len);
     memcpy(*ciphertext + data_len, iv, CIPHER_IV_SIZE);
     memcpy(*ciphertext + data_len + CIPHER_IV_SIZE, tag, CIPHER_TAG_SIZE);
 
-    // std::cout << "Encrypted output in c++: ";
-    // for (int i = 0; i < 100; i++) {
-    //     std::cout << (int) output[i] << " ";
-    // }
-    // std::cout << std::endl;
-    // 
-    // std::cout << "IV: ";
-    // for (int i = 0; i < CIPHER_IV_SIZE; i++) {
-    //     std::cout << (int) iv[i] << " ";
-    // }
-    // std::cout << std::endl;
-    // 
-    // std::cout << "tag: ";
-    // for (int i = 0; i < CIPHER_TAG_SIZE; i++) {
-    //     std::cout << (int) tag[i] << " ";
-    // }
-    // std::cout << std::endl;
+    memcpy(ret, output, data_len);
+    memcpy(ret + data_len, iv, CIPHER_IV_SIZE);
+    memcpy(ret + data_len + CIPHER_IV_SIZE, tag, CIPHER_TAG_SIZE);
 
     free(output);
     free(iv);
     free(tag);
+
+    return ret;
 }
 
-void decrypt_bytes(uint8_t* model_data, uint8_t* iv, uint8_t* tag, size_t data_len, uint8_t** text) {
+uint8_t* decrypt_bytes(uint8_t* model_data, uint8_t* iv, uint8_t* tag, size_t data_len, uint8_t** text) {
     mbedtls_gcm_context gcm;
     mbedtls_gcm_init(&gcm);
 
@@ -104,6 +91,11 @@ void decrypt_bytes(uint8_t* model_data, uint8_t* iv, uint8_t* tag, size_t data_l
         0,
         *text
     );
+
+    // FIXME: Memory leak
+    uint8_t* ret = (uint8_t*) malloc(data_len * sizeof(uint8_t));
+    memcpy(ret, *text, data_len);
+    return ret;
 }
 
 #endif

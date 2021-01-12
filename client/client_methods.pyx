@@ -26,8 +26,8 @@ cdef extern from "../common/encryption/serialization.h":
     mapcpp[string, vector[float]] deserialize(unsigned char* serialized_buffer)
 
 cdef extern from "../common/encryption/encrypt.h":
-    void encrypt_bytes(unsigned char* model_data, size_t data_len, unsigned char** ciphertext)
-    void decrypt_bytes(unsigned char* model_data, unsigned char* iv, unsigned char* tag, size_t data_len, unsigned char** text)
+    unsigned char* encrypt_bytes(unsigned char* model_data, size_t data_len, unsigned char** ciphertext)
+    unsigned char* decrypt_bytes(unsigned char* model_data, unsigned char* iv, unsigned char* tag, size_t data_len, unsigned char** text)
 
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
@@ -61,6 +61,7 @@ cdef unsigned char* to_cstring_array(list_str):
 def encrypt(model):
     print("kvah encryption start)")
     cdef int buffer_len = 0
+    cdef unsigned char* serialized_model
 
     # FIXME: dict_to_cmap to translate dictionary to c++ readable map
     serialized_model = serialize(dict_to_cmap(model), &buffer_len)
@@ -69,30 +70,37 @@ def encrypt(model):
     #  cdef bytes serialized_buffer = serialized_model[:buffer_len]
 
     # Take ownership of C++ malloc'ed memory in Python
-    cdef np.npy_intp shape[1] 
-    shape[0] = <np.npy_intp> buffer_len
-    cdef np.ndarray[np.uint8_t, ndim=1] py_serialized_model = np.PyArray_SimpleNewFromData(1, shape, np.NPY_UINT8, serialized_model)
+    #  cdef np.npy_intp shape[1] 
+    #  shape[0] = <np.npy_intp> buffer_len
+    #  cdef np.ndarray[np.uint8_t, ndim=1] py_serialized_model = np.PyArray_SimpleNewFromData(1, shape, np.NPY_UINT8, serialized_model)
 
     # Ensure that memory is freed
-    PyArray_ENABLEFLAGS(py_serialized_model, np.NPY_OWNDATA)
+    #  PyArray_ENABLEFLAGS(py_serialized_model, np.NPY_OWNDATA)
 
     # Convert ndarray to Python bytes
-    serialized_buffer = py_serialized_model.tobytes()
-    ciphertext, iv, tag = cpp_encrypt_bytes(serialized_buffer, buffer_len)
+    #  serialized_buffer = py_serialized_model.tobytes()
+    #  ciphertext, iv, tag = cpp_encrypt_bytes(serialized_buffer, buffer_len)
+    ciphertext, iv, tag = cpp_encrypt_bytes(serialized_model, buffer_len)
     print("kvah encryption end)")
     return ciphertext, iv, tag
 
-def cpp_encrypt_bytes(model_data, data_len):
+cdef cpp_encrypt_bytes(unsigned char* model_data, int data_len):
     print('Beginning cpp encryption')
     cdef unsigned char* ciphertext = <unsigned char*> PyMem_Malloc((data_len + IV_LENGTH + TAG_LENGTH) * sizeof(unsigned char))
     if ciphertext is NULL:
         raise MemoryError()
 
-    encrypt_bytes(model_data, data_len, &ciphertext)
+    cdef unsigned char* ctext
 
-    cdef bytes output = ciphertext[:data_len]
-    cdef bytes iv = ciphertext[data_len:data_len + IV_LENGTH]
-    cdef bytes tag = ciphertext[data_len + IV_LENGTH:data_len + IV_LENGTH + TAG_LENGTH]
+    ctext = encrypt_bytes(model_data, data_len, &ciphertext)
+
+    #  cdef bytes output = ciphertext[:data_len]
+    #  cdef bytes iv = ciphertext[data_len:data_len + IV_LENGTH]
+    #  cdef bytes tag = ciphertext[data_len + IV_LENGTH:data_len + IV_LENGTH + TAG_LENGTH]
+
+    cdef bytes output = ctext[:data_len]
+    cdef bytes iv = ctext[data_len:data_len + IV_LENGTH]
+    cdef bytes tag = ctext[data_len + IV_LENGTH:data_len + IV_LENGTH + TAG_LENGTH]
 
     #  print("OPython output: ")
     #  for i in range(100):
@@ -119,10 +127,14 @@ def decrypt(model_data, iv, tag, data_len):
     cdef unsigned char* c_model_data = to_cstring_array(model_data)
     cdef unsigned char* c_iv = to_cstring_array(iv)
     cdef unsigned char* c_tag = to_cstring_array(tag)
-    decrypt_bytes(c_model_data, c_iv, c_tag, data_len, &plaintext)
 
+    cdef unsigned char* ptext
+    ptext = decrypt_bytes(c_model_data, c_iv, c_tag, data_len, &plaintext)
+
+    cdef mapcpp[string, vector[float]] model
     # Cython automatically converts C++ map to Python dict
-    model = deserialize(plaintext)
+    #  model = deserialize(plaintext)
+    model = deserialize(ptext)
     PyMem_Free(plaintext)
     PyMem_Free(c_model_data)
     PyMem_Free(c_iv)

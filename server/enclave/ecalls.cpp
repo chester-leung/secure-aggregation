@@ -170,7 +170,7 @@ void enclave_transfer_model_out(uint8_t*** encrypted_new_params_ptr, size_t* new
     encrypted_new_params[0] = new uint8_t[serialized_buffer_size * sizeof(uint8_t)];
     encrypted_new_params[1] = new uint8_t[CIPHER_IV_SIZE * sizeof(uint8_t)];
     encrypted_new_params[2] = new uint8_t[CIPHER_TAG_SIZE * sizeof(uint8_t)];
-    encrypt_bytes(serialized_new_params, serialized_buffer_size, encrypted_new_params);
+    encrypt_bytes(serialized_new_params, serialized_buffer_size, &encrypted_new_params);
 
     // Need to copy the encrypted model, IV, and tag over to untrusted memory.
     *encrypted_new_params_ptr = (uint8_t**) oe_host_malloc(ENCRYPTION_METADATA_LENGTH * sizeof(uint8_t*));

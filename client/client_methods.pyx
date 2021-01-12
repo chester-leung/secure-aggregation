@@ -18,7 +18,7 @@ cdef extern from "../common/encryption/serialization.h":
     mapcpp[string, vector[float]] deserialize(unsigned char* serialized_buffer)
 
 cdef extern from "../common/encryption/encrypt.h":
-    void encrypt_bytes(unsigned char* model_data, size_t data_len, unsigned char** ciphertext)
+    void encrypt_bytes(unsigned char* model_data, size_t data_len, unsigned char*** ciphertext)
     void decrypt_bytes(unsigned char* model_data, unsigned char* iv, unsigned char* tag, size_t data_len, unsigned char** text)
 
 cdef cmap[string, vector[float]] dict_to_cmap(dict the_dict):
@@ -49,6 +49,7 @@ cdef unsigned char* to_cstring_array(list_str):
 
 def encrypt(model):
     cdef int buffer_len = 0
+    cdef unsigned char* serialized_model
 
     serialized_model = serialize(dict_to_cmap(model), &buffer_len)
     if buffer_len <= 0:
@@ -74,7 +75,7 @@ def cpp_encrypt_bytes(model_data, data_len):
     if ciphertext[2] is NULL:
         raise MemoryError()
 
-    encrypt_bytes(model_data, data_len, ciphertext)
+    encrypt_bytes(model_data, data_len, &ciphertext)
 
     cdef bytes output = ciphertext[0][:data_len]
     cdef bytes iv = ciphertext[1][:12]
@@ -95,7 +96,11 @@ def decrypt(model_data, iv, tag, data_len):
     decrypt_bytes(c_model_data, c_iv, c_tag, data_len, &plaintext)
 
     # Cython automatically converts C++ map to Python dict
+    cdef mapcpp[string, vector[float]] model 
     model = deserialize(plaintext)
     PyMem_Free(plaintext)
+    PyMem_Free(c_model_data)
+    PyMem_Free(c_iv)
+    PyMem_Free(c_tag)
     return model
     
